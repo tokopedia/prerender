@@ -1,3 +1,5 @@
+proxy_cache_path /tmp/nginx levels=1:2 keys_zone=backcache:8m max_size=100m inactive=48h use_temp_path=off;
+
 server {
     listen 80;
     server_name prerender.tokopedia.local;
@@ -7,6 +9,16 @@ server {
     error_log  /var/log/nginx/prerender.error.log;
 
     location / {
+        proxy_cache backcache;
+        proxy_cache_background_update on;
+        proxy_cache_use_stale updating timeout;
+        proxy_cache_valid 200 12h;
+        proxy_cache_valid any 1m;
+        proxy_cache_key "$scheme$request_method$host$request_uri$is_args$args";
+        add_header X-Proxy-Cache $upstream_cache_status;
+        proxy_ignore_headers Cache-Control;
+        
+
         set $url http://127.0.0.1:1999;
         proxy_http_version 1.1;
         proxy_pass $url;
